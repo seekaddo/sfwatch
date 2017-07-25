@@ -15,7 +15,7 @@ CC=gcc
 CFLAGS=-DDEBUG -Wall -pedantic -Werror -Wextra -Wstrict-prototypes \
                     -Wwrite-strings -fno-common -g -O3 -std=gnu11
 
-OBJECTS=main.o string.o
+OBJECTS=main.o array.o
 
 
 ##
