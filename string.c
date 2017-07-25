@@ -12,7 +12,6 @@
 #include "string.h"
 
 
-typedef char **string;
 static size_t initsize = 5;
 static size_t current_size = 0;
 
