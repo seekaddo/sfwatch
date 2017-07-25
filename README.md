@@ -6,6 +6,6 @@ Mac OSX and other Unix systems. Inotify is a linux kernel subsystem API for watc
 
 Run sfwatch from any directroy like any other linux command
 ```bash
-make all install
+make all install 
 
 ```
