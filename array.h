@@ -1,5 +1,5 @@
 /**
- *@file array.h
+ *@file string.h
  *  A simple Array datatype to store array of strings
  *  @author Dennis Addo
  *  @date 24/07/2017

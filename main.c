@@ -17,14 +17,32 @@
 #include <unistd.h>
 #include <ctype.h>
 #include "array.h"
- 
-static void do_files(const char *path, Array *str);
+
+/* User defined color for output formatting*/ 
+
+#define RED "\x1b[31m"
+#define GREEN "\x1b[32m"
+#define YELLOW "\x1b[33m"
+#define BLUE "\x1b[34m"
+#define MAGNENTAP "\x1b[35m"
+#define CYAN "\x1b[95m"
+#define DARKGREAY "\x1b[90m"
+#define RESET "\x1b[0m"
+
+
+
+
+static int do_files(const char *path, Array *str);
  
 static void do_dir(const char *path, Array *fp);
  
-static void handle_events(int fd, int *wd, size_t argc, Array *argv);
+static void events_handler(int fd, int *wd, size_t argc, Array *argv);
  
-static void args_parser(int argc, char **argv);
+static void args_parser(int argc, char **argv,char *pth[]);
+
+ static int add_to_watchlist(int fd,int wdd[], size_t len, Array *ffname);
+
+static int get_lfiles(char *sp[],int l,Array *f);
  
 static void do_usage(void);
  
@@ -33,17 +51,17 @@ static void flush(void);
  
 /**********User defined constants here*/
 static int rflag = 0;
-static const char *pflag = "?";
-static const char *sflag = "?";
+static const char *sflag = " ";
  
  
 /**
  *@brief Processing the passed commandline arguments
  *
  */
-void args_parser(int argc, char **argv) {
+void args_parser(int argc, char **argv, char *lpaths[]) {
      
     int opt;
+    int indx = 0;
      
     opterr = 0;
      
@@ -65,7 +83,8 @@ void args_parser(int argc, char **argv) {
                 rflag = 1;
                 break;
             case 'p':
-                pflag = optarg;
+                //pflag = optarg;
+                lpaths[indx++] = optarg;
                 break;
             case 's':
                 sflag = optarg;
@@ -100,15 +119,13 @@ void args_parser(int argc, char **argv) {
      
      
 }
+
  
- 
-#if 1
- 
-static void handle_events(int fd, int *wd, size_t argc, Array *argv) {
+static void events_handler(int fd, int *wd, size_t argc, Array *argv) {
      
     char buf[4096]
     __attribute__ ((aligned (__alignof__(struct inotify_event))));
-    const struct inotify_event *event;
+    const struct inotify_event *event;          //readonly inotify event
     size_t i;
     ssize_t len;
     char *ptr;
@@ -120,9 +137,7 @@ static void handle_events(int fd, int *wd, size_t argc, Array *argv) {
          *  I will use ioctl() for the buffer size later. is more robust
          * than the work around with the gcc attribute aligned 4096 bytes
          */
-         
-         
-         
+
         len = read(fd, buf, sizeof buf);
         if (len == -1 && errno != EAGAIN) {
             fprintf(stderr, "read: %s\n", strerror(errno));
@@ -146,79 +161,73 @@ static void handle_events(int fd, int *wd, size_t argc, Array *argv) {
              
             /*Additional functions to process this information will be updated soon.*/
              
-            if (event->mask & IN_OPEN)
-                fprintf(stdout, "IN_OPEN: ");
-            if (event->mask & IN_CLOSE_NOWRITE)
-                fprintf(stdout, "IN_CLOSE_NOWRITE: ");
-            if (event->mask & IN_CLOSE_WRITE)
-                fprintf(stdout, "IN_CLOSE_WRITE: ");
-            if (event->mask & IN_CREATE) {
-                fprintf(stdout, "IN_CREATE: ");
-            }
-            if (event->mask & IN_DELETE) {
-                fprintf(stdout, "IN_DELETE: ");
-            }
+            if (event->mask & IN_OPEN)                  fprintf(stdout, "IN_OPEN: ");
+
+            else if (event->mask & IN_CLOSE_NOWRITE)    fprintf(stdout, "IN_CLOSE_NOWRITE: ");
+
+            else if (event->mask & IN_CLOSE_WRITE)      fprintf(stdout, "IN_CLOSE_WRITE: ");
+
+            else if (event->mask & IN_CREATE)           fprintf(stdout, "IN_CREATE: ");
+            
+            else if (event->mask & IN_DELETE)           fprintf(stdout, "IN_DELETE: ");
              
-            if (event->mask & IN_ACCESS) {
-                fprintf(stdout, "IN_ACCESS: ");
-            }
+            else if (event->mask & IN_ACCESS)           fprintf(stdout, "IN_ACCESS: ");
+            
+            else if (event->mask & IN_DELETE_SELF)      fprintf(stdout, "IN_DELETE_SELF :");
+            
+            else if (event->mask & IN_MODIFY)           fprintf(stdout, "IN_MODIFY: ");
+            
+            else if (event->mask & IN_ISDIR)            fprintf(stdout, "IN_ISDIR: ");
              
-            if (event->mask & IN_DELETE_SELF) {
-                fprintf(stdout, "IN_DELETE_SELF :");
-            }
-             
-            if (event->mask & IN_MODIFY) {
-                fprintf(stdout, "IN_MODIFY: ");
-            }
-             
-            if (event->mask & IN_ISDIR) {
-                fprintf(stdout, "IN_ISDIR: ");
-            }
-             
-            if (event->mask & IN_OPEN) {
-                fprintf(stdout, "IN_OPEN: ");
-            }
-             
-            if (event->mask & IN_MOVED_FROM) {
-                fprintf(stdout, "IN_MOVED_FROM: ");
-            }
-            if (event->mask & IN_MOVED_TO) {
-                fprintf(stdout, "IN_MOVED_TO: ");
-            }
-             
+            //if (event->mask & IN_OPEN)                  fprintf(stdout, "IN_OPEN: ");
+            
+            if (event->mask & IN_MOVED_FROM)            fprintf(stdout, "IN_MOVED_FROM: ");
+            
+            if (event->mask & IN_MOVED_TO)              fprintf(stdout, "IN_MOVED_TO: ");
              
             /* Print the name of the watched directory */
              
-            for (i = 1; i < argc; ++i) {
+             const char *pth = " ";
+             const char *name = "";
+             const char *slash = "/";
+
+            for (i = 0; i < argc; ++i) {
+               
                 if (wd[i] == event->wd) {
-                    fprintf(stdout, "%s/", (*argv)[i]);
+                    pth = (*argv)[i];
                     break;
                 }
             }
              
             /* Print the name of the file */
              
-            if (event->len)
-                fprintf(stdout, "%s", event->name);
-             
-            /* Print type of filesystem object */
-             
-            if (event->mask & IN_ISDIR)
-                fprintf(stdout, " [directory]\n");
-            else
-                fprintf(stdout, " [file]\n");
+
+            if (pth != NULL && event->len){
+                name = event->name;
+
+                size_t l = strlen(pth);
+                slash =  (pth[l-1] == '/' ? "" :"/");
+
+            fprintf(stdout, "%s%s%s%s %s%s \n",
+                                GREEN, pth, slash,name,
+                                (event->mask & IN_ISDIR)? "[directory]": "[file]",RESET);
+                
+            }else{
+                fprintf(stdout, "%s\n", pth);
+            }
+            
+            
         }
     }
 }
+
+
  
-#endif
- 
-static void do_files(const char *path, Array *fnames) {
+int do_files(const char *path, Array *fnames) {
      
     if (path == NULL) {
         fprintf(stderr, "%s\n", "Path can't be NULL, call help Usage");
-        flush();
-        exit(EXIT_FAILURE);
+        return -1;
     }
      
      
@@ -244,6 +253,7 @@ static void do_files(const char *path, Array *fnames) {
      
     if (ret == -1) {
         fprintf(stderr, "lstat: %s %s\n", strerror(errno), newpath);
+        freeall(fnames,get_size());
         flush();
         exit(EXIT_FAILURE);
     }
@@ -254,6 +264,8 @@ static void do_files(const char *path, Array *fnames) {
         iflag = 1;
         do_dir(newpath, fnames);
     }
+
+    return 0;
      
      
 }
@@ -287,20 +299,50 @@ static void do_dir(const char *path, Array *fps) {
         char p[len];
         snprintf(p, len, "%s%s%s", path, slash, drent->d_name);
          
-         
-        if (drent->d_type == DT_DIR) do_files(p, fps);
-        else
-            do_files(p, fps);
+        do_files(p, fps);
          
          
     }
      
-     
     (void) closedir(dir);
      
-     
     return;
+}
+
+
+int add_to_watchlist(int fdd,int wdd[], size_t len, Array *ffname){
+
+    size_t i;
+    int status = 0;
+
+    for (i = 0; (*ffname)[i] != NULL && i < len; i++) {
+        wdd[i] = inotify_add_watch(fdd, (*ffname)[i], IN_ALL_EVENTS);
+        if (wdd[i] == -1) {
+            fprintf(stderr, "Cannot watch '%s': %s \n", (*ffname)[i], strerror(errno));
+            status =  -1;
+            break;
+        }
+         
+        fprintf(stdout, "Watching: %s\n", (*ffname)[i]);
+    }
      
+    fprintf(stdout, "\n");
+
+    return status;
+
+}
+
+int get_lfiles(char *sp[],int l, Array *fn){
+
+    for (int i = 0; sp[i] != NULL && i < l; ++i){
+
+        if( do_files(sp[i], fn) == -1){   //get all the files and dir and store them in fnames
+            return -1;
+        }
+    }
+
+    return 0;       
+
 }
  
 void flush(void) {
@@ -321,27 +363,24 @@ static void do_usage(void) {
             "       : -s            output log to a file"
              
             );
-     
-     
+          
 }
  
+
+
  
 int main(int argc, char *argv[]) {
     char buf;
     int fd, poll_num;
     nfds_t nfds;
     struct pollfd fds[2];
-    size_t i;
+
+    char *lpath[argc];
+    memset(lpath,0,argc);
      
      
-    args_parser(argc, argv);
-     
-     
-#if 0
-    fprintf(stdout, "pflag: %s rflag: %d sflag: %s\n",pflag,rflag,sflag);
-     
-#endif
-     
+    args_parser(argc, argv,lpath);
+
      
      
     /* Create the file descriptor  */
@@ -356,34 +395,43 @@ int main(int argc, char *argv[]) {
     /* Allocate memory for watch descriptors files/dir full paths */
      
     Array fnames = init_string(6);
+
+
+
+    if(get_lfiles(lpath,argc,&fnames) == -1){//get all the files and dir and store them in fnames
      
-    if (pflag[0] != '?') {
-        do_files(pflag, &fnames);   //get all the files and dir and store them in fnames
-    }
-     
+        freeall(&fnames, get_size());
+        (void) close(fd);
+
+        fprintf(stderr, "Sorry Listening for events stopped.!!\n"
+                        "Cleaning up resources now!!!\n");
+        flush();
+        return EXIT_FAILURE;
+    }  
+    
     size_t dlen = get_size(); //number of files and directories
-     
+   
+
+
     fprintf(stdout, "The get_size is: %zu\n", dlen);
      
     int wd[dlen];
-     
-    for (i = 0; fnames[i] != NULL && i < dlen; i++) {
-        wd[i] = inotify_add_watch(fd, fnames[i], IN_ALL_EVENTS);
-        if (wd[i] == -1) {
-            fprintf(stderr, "Cannot watch '%s': %s \n", fnames[i], strerror(errno));
-            freeall(&fnames, dlen);
-            (void) close(fd);
-            flush();
-            exit(EXIT_FAILURE);
-        }
-         
-        fprintf(stdout, "Watching: %s\n", fnames[i]);
-    }
-     
-    fprintf(stdout, "\n");
-     
+
+
+    if (add_to_watchlist(fd,wd,dlen, &fnames) == -1){
+
+        freeall(&fnames, dlen);
+        (void) close(fd);
+        fprintf(stdout, "Listening for events stopped.\n"
+                    "Cleaning up resources now!!\n");
+        flush();
+        return EXIT_FAILURE;
+    }     
     fprintf(stderr, "Press ENTER key to terminate.\n");
-    /* Prepare for polling */
+    
+
+
+    /* Prepare for polling 2 file discriptors for now*/
      
     nfds = 2;
      
@@ -397,7 +445,7 @@ int main(int argc, char *argv[]) {
     fds[1].fd = fd;
     fds[1].events = POLLIN;
      
-    /* Wait for events and terminal input */
+    /* Wait for events --> fd and terminal input */
      
     fprintf(stdout, "Listening for events.\n");
     while (1) {
@@ -438,13 +486,13 @@ int main(int argc, char *argv[]) {
              
             if (fds[1].revents & POLLIN) {
                  
-                handle_events(fd, wd, dlen, &fnames);
+                events_handler(fd, wd, dlen, &fnames);
             }
         }
     }
      
     fprintf(stdout, "Listening for events stopped.\n"
-            "Cleaning up resources now!!\n");
+                    "Cleaning up resources now!!\n");
      
      
     freeall(&fnames, dlen);
