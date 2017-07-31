@@ -125,11 +125,13 @@ void args_parser(int argc, char **argv, char *lpaths[]) {
 static void events_handler(int fd, int *wd, size_t argc, sds_array *argv) {
      
     
+       char buf[4096]
+    __attribute__ ((aligned (__alignof__(struct inotify_event))));
     const struct inotify_event *event;          //readonly inotify event
     size_t i;
     ssize_t len;
     char *ptr;
-    size_t buflen;
+    //size_t buflen;
      
      
     for (;;) {
@@ -139,9 +141,10 @@ static void events_handler(int fd, int *wd, size_t argc, sds_array *argv) {
          * than the work around with the gcc attribute aligned 4096 bytes
          */
 
-
-
-        if(ioctl(fd,FIONREAD,&buflen) == -1){
+#if 0
+       //Portability problem with most Debian system. 4096 with gcc aligned is big but is ok.
+       
+       if(ioctl(fd,FIONREAD,&buflen) == -1){
             fprintf(stderr, "ioctl: %s\n", strerror(errno));
             freeall(argv,argv->size);
             exit(EXIT_FAILURE);
@@ -149,18 +152,19 @@ static void events_handler(int fd, int *wd, size_t argc, sds_array *argv) {
         
         char buf[buflen];
 
-#if 0
+
             printf("bytes available: %zu\n", buflen);
-#endif
-        
         if (buflen <= 0)
             break;
+#endif
+        
+
 
         len = read(fd, buf, sizeof buf);
         if (len == -1 && errno != EAGAIN) {
             fprintf(stderr, "read: %s\n", strerror(errno));
             freeall(argv, argc);
-            (void) close(fd); //free other memories too
+            (void) close(fd);
             flush();
             exit(EXIT_FAILURE);
         }
