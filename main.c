@@ -688,10 +688,12 @@ int add_to_watchlist(int fdd, int **wdd, size_t len, sds_array *ffname) {
 
     for (i = 0; ffname->mem[i] != NULL && i < len; i++) {
         (*wdd)[i] = inotify_add_watch(fdd, ffname->mem[i], IN_ALL_EVENTS | IN_DONT_FOLLOW);
-        if((*wdd)[i] == -1 && errno == EACCES)
+        if((*wdd)[i] == -1 && errno == EACCES){
+            fprintf(stderr, "Cannot watch '%s': %s \n", ffname->mem[i], strerror(errno));
             continue;
+        }
         
-        if ((*wdd)[i] == -1) {
+        if ((*wdd)[i] == -1 && errno != EACCES) {
             fprintf(stderr, "Cannot watch '%s': %s \n", ffname->mem[i], strerror(errno));
             status = -1;
             break;
