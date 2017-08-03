@@ -71,7 +71,7 @@ static void do_dir(const char *path, sds_array *fp);
 
 static void events_handler(int fd, int **wd, sds_array *argv);
 
-static void args_parser(int argc, char **argv, char *pth[]);
+static void args_parser(int *argc, char **argv, char *pth[]);
 
 static int add_to_watchlist(int fd, int **wdd, size_t len, sds_array *ffname);
 
@@ -116,7 +116,7 @@ const char const *msg_modify = "--> The content was modified";
  *@brief Processing the passed commandline arguments
  *
  */
-void args_parser(int argc, char **argv, char *lpaths[]) {
+void args_parser(int *argc, char **argv, char *lpaths[]) {
 
     int opt;
     int indx = 0;
@@ -124,14 +124,14 @@ void args_parser(int argc, char **argv, char *lpaths[]) {
     opterr = 0;
 
 
-    if (argc < 2) {
+    if (*argc < 2) {
         do_usage();
         flush();
         exit(EXIT_FAILURE);
     }
 
 
-    while ((opt = getopt(argc, argv, "hrp:s:")) != -1) {
+    while ((opt = getopt(*argc, argv, "hrp:s:")) != -1) {
 
         switch (opt) {
             case 'h':
@@ -172,6 +172,8 @@ void args_parser(int argc, char **argv, char *lpaths[]) {
         flush();
         exit(EXIT_FAILURE);
     }
+    
+    *argc = indx;
 
 
 }
@@ -804,8 +806,9 @@ int main(int argc, char *argv[]) {
     char *lpath[argc];
     memset(lpath, 0, argc);
 
-
-    args_parser(argc, argv, lpath);
+  
+    int plen = argc;
+    args_parser(&plen, argv, lpath);
 
 
 
@@ -823,7 +826,7 @@ int main(int argc, char *argv[]) {
     sds_array fnames = init_sds_array(6);
 
 
-    if (get_lfiles(lpath, argc, &fnames) == -1) {//get all the files and dir and store them in fnames
+    if (get_lfiles(lpath, plen, &fnames) == -1) {//get all the files and dir and store them in fnames
 
         freeall(&fnames, fnames.size);
         (void) close(fd);
