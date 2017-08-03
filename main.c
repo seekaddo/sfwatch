@@ -166,7 +166,7 @@ void args_parser(int *argc, char **argv, char *lpaths[]) {
         }
     }
 
-    if (optind < argc) {
+    if (optind < *argc) {
         fprintf(stderr, "%s\n", "Non-Option argument");
         do_usage();
         flush();
