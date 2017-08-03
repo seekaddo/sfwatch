@@ -23,6 +23,8 @@ typedef struct sd_array {
 extern sds_array init_sds_array(size_t size);
  
 extern void add_str(sds_array *sdsa,const char *s);
+
+extern int search_indx(size_t *ind, const sds_array *sda, const char *path);
  
 extern void delete_str(sds_array *array, const size_t index);
  
