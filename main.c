@@ -596,47 +596,38 @@ void do_delete(const int tp, char *pathname,sds_array *sda,  int **wd){
 
 int do_files(const char *path, sds_array *fnames) {
 
-    if (path == NULL) {
+    if (path == NULL || strlen(path) <= 1) {
         fprintf(stderr, "%s\n", "Path can't be NULL, call help Usage");
         return -1;
     }
 
-
-    const char *newpath;
     static int iflag = 0;
-    const char *curr_path = "./";
+   
 
-
-    if (strcmp(path, " ") == 0) {
-        newpath = curr_path;
-
-    } else {
-        newpath = path;
-    }
 
 #if 0
-    fprintf(stdout, "addingg:---> %s\n", newpath);
+    fprintf(stdout, "addingg:---> %s\n", path);
 #endif
 
-    add_str(fnames, newpath);
+    add_str(fnames, path);
 
 
     struct stat fatr;
-    int ret = lstat(newpath, &fatr);
+    int ret = lstat(path, &fatr);
 
 
     if (ret == -1) {
-        fprintf(stderr, "lstat: %s %s\n", strerror(errno), newpath);
+        fprintf(stderr, "lstat: %s %s\n", strerror(errno), path);
         freeall(fnames, fnames->size);
         flush();
         exit(EXIT_FAILURE);
     }
 
     if (S_ISDIR(fatr.st_mode) && rflag == 1) {
-        do_dir(newpath, fnames);
+        do_dir(path, fnames);
     } else if (S_ISDIR(fatr.st_mode) && iflag == 0) {
         iflag = 1;
-        do_dir(newpath, fnames);
+        do_dir(path, fnames);
     }
 
     return 0;
