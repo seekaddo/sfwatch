@@ -33,3 +33,10 @@ To do recursive monitor on directory and it's subdirectories use -r option
 ![alt text](https://github.com/seekaddo/sfwatch/blob/master/screentest2.png)
 
 ![alt text](https://github.com/seekaddo/sfwatch/blob/master/screentest3.png)
+
+
+
+# feedbacks
+
+I am open to all kinds of feedbacks. Little project to keep me engage this sommer2017.
+Give it a try and let me know what you think. Feel free to open an issue for your feedbacks
