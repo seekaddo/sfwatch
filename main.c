@@ -596,7 +596,7 @@ void do_delete(const int tp, char *pathname,sds_array *sda,  int **wd){
 
 int do_files(const char *path, sds_array *fnames) {
 
-    if (path == NULL || strlen(path) <= 1) {
+    if (path == NULL) {
         fprintf(stderr, "%s\n", "Path can't be NULL, call help Usage");
         return -1;
     }
