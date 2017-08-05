@@ -148,7 +148,6 @@ void args_parser(int *argc, char **argv, char *lpaths[]) {
                 break;
             case 's':
                 sflag = optarg;
-                //fprintf(stderr, "Sorry this option  is still under implementation. \n");
                 break;
             case '?':
                 if (optopt == 'p') {
@@ -210,7 +209,6 @@ void events_handler(int fd, int **wd,sds_array *argv) {
         }
         
         char buf[buflen];
-        printf("bytes available: %zu\n", buflen);
         if (buflen <= 0)
             break;
 #endif
@@ -824,8 +822,8 @@ int main(int argc, char *argv[]) {
         freeall(&fnames, fnames.size);
         (void) close(fd);
         
-        fprintf(stderr, "Sorry Listening for events stopped.!!\n"
-                "Cleaning up resources now!!!\n");
+        fprintf(stderr, "%s\n%s\n","Sorry Listening for events stopped.!!",
+                                    "Cleaning up resources now!!!");
         flush();
         return EXIT_FAILURE;
     }
@@ -851,8 +849,8 @@ int main(int argc, char *argv[]) {
         
         freeall(&fnames, fnames.size);
         (void) close(fd);
-        fprintf(stdout, "Listening for events stopped.\n"
-                "Cleaning up resources now!!\n");
+        fprintf(stdout, "%s\n%s\n","Listening for events stopped.",
+                                    "Cleaning up resources now!!");
         free(wd);
         flush();
         return EXIT_FAILURE;
@@ -880,7 +878,7 @@ int main(int argc, char *argv[]) {
     
     /* Wait for events --> fd and terminal input */
     
-    fprintf(stdout, "Listening for events.\n");
+    fprintf(stdout, "%s\n","Listening for events.");
     while (1) {
         poll_num = poll(fds, nfds, -1);
         
@@ -926,8 +924,8 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    fprintf(stdout, "Listening for events stopped.\n"
-            "Cleaning up resources now!!\n");
+    fprintf(stdout, "%s\n%s\n","Listening for events stopped.",
+                                "Cleaning up resources now!!");
     
     
     freeall(&fnames, fnames.size);
