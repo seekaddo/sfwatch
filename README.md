@@ -6,6 +6,7 @@ Mac OSX and other Unix systems. Inotify is a linux kernel subsystem API for watc
 Run sfwatch from any directroy like any other linux command
 ```bash
 make all install 
+After that you can do this sfwatch -p <dirptha/filepath>
 
 ```
 
@@ -28,6 +29,25 @@ You can redirect output to a file with the -s option
 
 ```bash
 ./sfwatch -rp <dirpath> -s path_tofile
+
+```
+
+
+If you want to use sfwatch a big directory with files and subdirectories more than 10,000 or your default
+inotify limit then you will have to change the inotify limit in /etc/sysctl.conf
+
+```bash
+#to this values or any preferred values
+
+fs.inotify.max_user_watches = 999999
+fs.inotify.max_queued_events = 999999
+fs.inotify.max_user_instances = 999999
+
+You can also view the values using
+sudo sysctl fs.inotify.max_user_watches 
+    fs.inotify.max_queued_events 
+    fs.inotify.max_user_instances
+
 ```
 
 
@@ -35,11 +55,15 @@ You can redirect output to a file with the -s option
 # screenshot to show how it really works
 
 
+
 ![alt text](https://github.com/seekaddo/sfwatch/blob/master/screentest.png)
+
 
 ![alt text](https://github.com/seekaddo/sfwatch/blob/master/screentest2.png)
 
+
 ![alt text](https://github.com/seekaddo/sfwatch/blob/master/screentest3.png)
+
 
 
 
