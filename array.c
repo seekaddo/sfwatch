@@ -52,7 +52,7 @@ sds_array init_sds_array(size_t size){
 
 void add_str(sds_array *sdsa,const char *s){
     if(sdsa->mem == NULL){
-        fprintf(stderr,"Please init sdsa first\n");
+        fprintf(stderr,"add_str: %s\n","Please init sdsa first");
         return;
     }
     static size_t l = 0;     // using l is not classic but just for easy readability as sda->mem[sda->size]
@@ -104,7 +104,7 @@ inline int search_indx(size_t *ind, const sds_array *sda, const char *path){
 void delete_str(sds_array *array, const size_t index){
     
     if(array->mem == NULL){
-        fprintf(stderr,"delete_str: sds_array is empty.!\n");
+        fprintf(stderr,"delete_str: %s\n"," sds_array is empty.!");
         exit(EXIT_FAILURE);
     }
 
