@@ -125,8 +125,7 @@ void delete_str(sds_array *array, const size_t index){
 
     }
     
-    array->size -= 1;
-    
+    array->size -= 1;    
 }
 
 void freeall(sds_array *sds,size_t len){
