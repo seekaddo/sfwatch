@@ -55,10 +55,10 @@ enum ascolors{
 
 
 static const char const *colors[] = {"\x1b[31m", "\x1b[32m", "\x1b[33m",
-    "\x1b[34m", "\x1b[35m", "\x1b[95m",
-    "\x1b[96m", "\x1b[90m", "\x1b[100m",
-    "\x1b[94m", "\x1b[0m" , ""
-};
+                                     "\x1b[34m", "\x1b[35m", "\x1b[95m",
+                                     "\x1b[96m", "\x1b[90m", "\x1b[100m",
+                                     "\x1b[94m", "\x1b[0m" , ""
+                                    };
 
 
 typedef struct acolor{
