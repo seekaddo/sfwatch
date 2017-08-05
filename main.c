@@ -1,15 +1,18 @@
-
 /*
 MIT License
+
 Copyright (c) 2017 Dennis Addo
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,6 +21,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
+
+
+
+
 
 
 /**
@@ -45,28 +52,17 @@ SOFTWARE.
 
 /* User defined color for output formatting*/
 
-
-
-enum ascolors{
-    RED, GREEN, YELLOW,
-    BLUE, MAGNENTAP, CYAN,
-    LCYAN, DARKGREAY, LGRAY,
-    LBLUE, RESET, NO_COLOR
-};
-
-
-static const char const *colors[] = {"\x1b[31m", "\x1b[32m", "\x1b[33m",
-                                     "\x1b[34m", "\x1b[35m", "\x1b[95m",
-                                     "\x1b[96m", "\x1b[90m", "\x1b[100m",
-                                     "\x1b[94m", "\x1b[0m" , ""
-                                    };
-
-
-typedef struct acolor{
-    enum ascolors colr;   // color
-    enum ascolors end;   //color terminator
-}acolor;
-
+#define RED "\x1b[31m"
+#define GREEN "\x1b[32m"
+#define YELLOW "\x1b[33m"
+#define BLUE "\x1b[34m"
+#define MAGNENTAP "\x1b[35m"
+#define CYAN "\x1b[95m"
+#define LCYAN "\x1b[96m"
+#define DARKGREAY "\x1b[90m"
+#define LGRAY "\x1b[100m"
+#define LBLUE "\x1b[94m"
+#define RESET "\x1b[0m"
 
 
 static int do_files(const char *path, sds_array *str);
@@ -88,7 +84,7 @@ static int fexisit(const char *pathname);
 static void do_delete_s(const int tp, char *pathname,sds_array *sda, size_t idx,int **wd);
 static void do_delete(const int tp, char *pathname,sds_array *sda,  int **wd);
 
-static void do_formatted_output(const int type, const char *pathname, const char *msg,const acolor color);
+static void do_formatted_output(const int type, const char *pathname, const char *msg,const char **colrs);
 
 static void do_move_from(const int typ, const char *pathname,sds_array *sda, int **wd);
 
@@ -149,7 +145,6 @@ void args_parser(int *argc, char **argv, char *lpaths[]) {
                 break;
             case 's':
                 sflag = optarg;
-                //fprintf(stderr, "Sorry this option  is still under implementation. \n");
                 break;
             case '?':
                 if (optopt == 'p') {
@@ -177,10 +172,8 @@ void args_parser(int *argc, char **argv, char *lpaths[]) {
         flush();
         exit(EXIT_FAILURE);
     }
-
-
+    
     *argc = indx;
-    lpaths[indx] = NULL;
 
 
 }
@@ -191,7 +184,7 @@ void args_parser(int *argc, char **argv, char *lpaths[]) {
 
     char buf[4096]
             __attribute__ ((aligned (__alignof__(struct inotify_event))));
-    const struct inotify_event *event;          //readonly inotify event
+    const struct inotify_event *event;
     ssize_t len;
     char *ptr;
 
@@ -204,6 +197,8 @@ void args_parser(int *argc, char **argv, char *lpaths[]) {
          */
 
 #if 0
+        
+        //failing on most Linux system/ buffer aligned with gcc attribute is better
         if(ioctl(fd,FIONREAD,&buflen) == -1){
             fprintf(stderr, "ioctl: %s\n", strerror(errno));
             freeall(argv,argv->size);
@@ -270,7 +265,7 @@ void args_parser(int *argc, char **argv, char *lpaths[]) {
 
             }
 
-            if( i < 1)
+            if( i <= 2)
                 continue;
 
 
@@ -281,36 +276,27 @@ void args_parser(int *argc, char **argv, char *lpaths[]) {
 
 
             /*Additional functions to process this information will be updated soon.
-             *
-            */
 
-            acolor color;
+
+            */
 
             switch( event->mask & (IN_ALL_EVENTS | IN_UNMOUNT | IN_Q_OVERFLOW | IN_IGNORED) ){
 
                 case IN_OPEN :
-                    color.colr = GREEN;
-                    color.end = RESET;
-                    do_formatted_output(type, pthname,msg_open,color);
+                    do_formatted_output(type, pthname,msg_open,(const char *[]){GREEN,RESET});
                     break;
 
                 case IN_ACCESS: case IN_ATTRIB:
-                    color.colr = DARKGREAY;
-                    color.end = RESET;
-                    do_formatted_output(type,pthname,msg_acess,color);
+                    do_formatted_output(type,pthname,msg_acess,(const char *[]){DARKGREAY,RESET});
                     break;
 
                 case IN_CLOSE_WRITE: case IN_CLOSE_NOWRITE:
-                    color.colr = NO_COLOR;
-                    color.end = RESET;
 
-                    do_formatted_output(type,pthname,msg_close,color);
+                    do_formatted_output(type,pthname,msg_close,NULL);
                     break;
 
                 case IN_CREATE:
-                    color.colr = GREEN;
-                    color.end = RESET;
-                    do_formatted_output(type,pthname,msg_created,color);
+                    do_formatted_output(type,pthname,msg_created,(const char *[]){GREEN,RESET});
                     break;
 
                 case IN_DELETE:
@@ -321,9 +307,7 @@ void args_parser(int *argc, char **argv, char *lpaths[]) {
                     break;
 
                 case IN_MODIFY:
-                    color.colr = CYAN;
-                    color.end = RESET;
-                    do_formatted_output(type,pthname,msg_modify,color);
+                    do_formatted_output(type,pthname,msg_modify,(const char *[]){CYAN,RESET});
                     break;
 
                 case IN_MOVED_FROM:
@@ -345,7 +329,6 @@ void args_parser(int *argc, char **argv, char *lpaths[]) {
 }
 
 
-
 /**\brief
  * formatting the output from the inotify events
  * to a speficied file or to STDOUT
@@ -355,12 +338,19 @@ void args_parser(int *argc, char **argv, char *lpaths[]) {
  *
  */
 
-inline void do_formatted_output(const int t, const char *pathname, const char *msg,const acolor color){
+inline void do_formatted_output(const int t, const char *pathname, const char *msg,const char **colrs){
 
 
     char tbuf[30];
-    get_time(tbuf,30);
+    struct tm ftm;
+    time_t time1;
 
+
+
+    time1 = time(NULL);
+    localtime_r(&time1,&ftm);
+
+    strftime(tbuf,sizeof tbuf,"%F %T",&ftm);
     const char *type = (t == 1) ? "[Directory]": "[File]";
 
     FILE *fp = NULL;
@@ -373,11 +363,11 @@ inline void do_formatted_output(const int t, const char *pathname, const char *m
 
 
 
-    if(color.colr == NO_COLOR){
+    if(colrs == NULL){
         fprintf((fp == NULL? stdout: fp),"%s %s %s %s\n",tbuf,type,pathname,msg);
     }else {
         fprintf((fp == NULL? stdout: fp),"%s %s %s %s %s %s\n",tbuf,type,
-                                        fp == NULL ? colors[color.colr] :"",pathname,msg,fp == NULL ? colors[color.end]:"");
+                                        fp == NULL ? colrs[0]:"",pathname,msg,fp == NULL ? colrs[1]:"");
     }
 
 
@@ -389,6 +379,7 @@ inline void do_formatted_output(const int t, const char *pathname, const char *m
     }
 
 }
+
 
 inline void do_move_from(const int t, const char *pathname, sds_array *sda,int **wd){
 
@@ -427,7 +418,7 @@ inline void do_move_from(const int t, const char *pathname, sds_array *sda,int *
 
 
     fprintf((fp == NULL? stdout: fp),"%s %s %s %s%s%s ->",tbuf,type,mg,
-                                    fp == NULL ? colors[LGRAY]:"",pathname,fp == NULL ? colors[RESET]:"");
+                                    fp == NULL ? LGRAY:"",pathname,fp == NULL ? RESET:"");
 
 
 
@@ -451,7 +442,7 @@ inline void do_move_from(const int t, const char *pathname, sds_array *sda,int *
 
 
 
-     if(pathname == NULL || strlen(pathname) < 1 ){
+     if(pathname == NULL || strlen(pathname) <= 2){
          fprintf((fp == NULL? stdout: fp),"\n");
      } else{
          fprintf((fp == NULL? stdout: fp)," %s \n",pathname);
@@ -520,12 +511,12 @@ void do_delete_s(const int tp, char *pathname,sds_array *sda, size_t idx, int **
             do_resize(wd,idx,sda->size);
             delete_str(sda,idx);
             fprintf((fp == NULL? stdout: fp),"%s %s %s %s %s %s\n",tbuf ,type,
-                                             fp == NULL ? colors[RED]:"",pathname,msg,fp == NULL ? colors[RESET]:" ");
+                                             fp == NULL ? RED:"",pathname,msg,fp == NULL ? RESET:" ");
             gflag =1;
 
         }else{
             fprintf((fp == NULL? stdout: fp),"%s %s %s %s %s %s\n",tbuf ,type,
-                                           fp == NULL ? colors[RED]: "",pathname,msg,fp == NULL ? colors[RESET]: "");
+                                           fp == NULL ? RED: "",pathname,msg,fp == NULL ? RESET: "");
         }
     }
 
@@ -581,11 +572,11 @@ void do_delete(const int tp, char *pathname,sds_array *sda,  int **wd){
             do_resize(wd, gin, sda->size);
             delete_str(sda, gin);
             fprintf((fp == NULL? stdout: fp), "%s %s %s %s %s %s\n", tbuf, type,
-                                               fp == NULL ? colors[RED] :"", pathname, msg_delete,fp == NULL ?colors[RESET]:"");
+                                               fp == NULL ? RED:"", pathname, msg_delete,fp == NULL ?RESET:"");
 
         } else {
             fprintf((fp == NULL? stdout: fp), "%s %s %s %s %s %s\n", tbuf, type,
-                                             fp == NULL ? colors[RED] :"", pathname, msg_delete,fp == NULL? colors[RESET]:"");
+                                             fp == NULL ? RED:"", pathname, msg_delete,fp == NULL? RESET:"");
         }
     }
 
@@ -610,12 +601,12 @@ int do_files(const char *path, sds_array *fnames) {
         return -1;
     }
 
-
     static int iflag = 0;
+   
 
 
 #if 0
-    fprintf(stdout, "addingg:---> %s\n", newpath);
+    fprintf(stdout, "addingg:---> %s\n", path);
 #endif
 
     add_str(fnames, path);
@@ -690,12 +681,19 @@ int add_to_watchlist(int fdd, int **wdd, size_t len, sds_array *ffname) {
 
     for (i = 0; ffname->mem[i] != NULL && i < len; i++) {
         (*wdd)[i] = inotify_add_watch(fdd, ffname->mem[i], IN_ALL_EVENTS | IN_DONT_FOLLOW);
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of cde085c... new datatype for the colors
         if((*wdd)[i] == -1 && errno == EACCES){
             fprintf(stderr, "Cannot watch '%s': %s \n", ffname->mem[i], strerror(errno));
             continue;
         }
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> parent of cde085c... new datatype for the colors
         if ((*wdd)[i] == -1 && errno != EACCES) {
             fprintf(stderr, "Cannot watch '%s': %s \n", ffname->mem[i], strerror(errno));
             status = -1;
@@ -710,7 +708,6 @@ int add_to_watchlist(int fdd, int **wdd, size_t len, sds_array *ffname) {
     return status;
 
 }
-
 
 int get_lfiles(char *sp[], int l, sds_array *fn) {
 
@@ -793,6 +790,13 @@ inline  void do_usage(void) {
 }
 
 
+
+/**\brief
+ * Main program start here. Initialise all the necessary buffers
+ * and use poll to listen on file discriptors for buffer feeds.
+ *
+ */
+
 int main(int argc, char *argv[]) {
     char buf;
     int fd, poll_num;
@@ -802,9 +806,8 @@ int main(int argc, char *argv[]) {
     char *lpath[argc];
     memset(lpath, 0, argc);
 
+  
     int plen = argc;
-
-
     args_parser(&plen, argv, lpath);
 
 
@@ -822,6 +825,7 @@ int main(int argc, char *argv[]) {
 
     sds_array fnames = init_sds_array(6);
 
+
     if (get_lfiles(lpath, plen, &fnames) == -1) {//get all the files and dir and store them in fnames
 
         freeall(&fnames, fnames.size);
@@ -833,11 +837,10 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    //size_t dlen = get_size(); //number of files and directories
 
 
 
-    fprintf(stdout, "%sCurrently monitoring %zu objects%s\n",colors[YELLOW], fnames.size,colors[RESET]);
+    fprintf(stdout, "%sCurrently monitoring %zu objects%s\n",YELLOW, fnames.size,RESET);
 
     int *wd = malloc(fnames.size * sizeof(int));
 
@@ -863,8 +866,8 @@ int main(int argc, char *argv[]) {
 
 
 
-    fprintf(stdout, "%sRedirrecting all log to: %s %s\n",colors[YELLOW],(sflag[0] != '?' ? sflag:"STDOUT"),colors[RESET]);
-    fprintf(stdout, "%sPress ENTER key to terminate.%s\n",colors[RED],colors[RESET]);
+    fprintf(stdout, "%sRedirrecting all log to: %s %s\n",YELLOW,(sflag[0] != '?'? sflag:"STDOUT"),RESET);
+    fprintf(stdout, "%sPress ENTER key to terminate.%s\n",RED,RESET);
 
 
     /* Prepare for polling 2 file discriptors for now*/
@@ -922,7 +925,7 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            if (fds[1].revents & POLLIN) {
+            if (fds[1].revents & POLLIN) { // data from inotify event is ready. handle them.
 
                 events_handler(fd, &wd, &fnames);
             }
