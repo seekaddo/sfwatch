@@ -56,13 +56,13 @@ sudo sysctl fs.inotify.max_user_watches
 
 
 
-![alt text](https://github.com/seekaddo/sfwatch/blob/master/screentest.png)
-
-
 ![alt text](https://github.com/seekaddo/sfwatch/blob/master/screentest2.png)
 
 
 ![alt text](https://github.com/seekaddo/sfwatch/blob/master/screentest3.png)
+
+
+![alt text](https://github.com/seekaddo/sfwatch/blob/master/screentest.png)
 
 
 
