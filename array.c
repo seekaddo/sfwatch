@@ -85,6 +85,8 @@ void add_str(sds_array *sdsa,const char *s){
 inline int search_indx(size_t *ind, const sds_array *sda, const char *path){
 
     int found = -1;
+    
+    //Will be replaced with binarySearch for better process time
 
     for (size_t i = 0; i < sda->size ; ++i) {
         if(strcmp(sda->mem[i],path) == 0){
